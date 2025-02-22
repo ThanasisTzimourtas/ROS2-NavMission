@@ -1,0 +1,6 @@
+amcl:
+  ros__parameters:
+    initial_pose:
+      x: 0.056  # Match your initial pose
+      y: 0.016
+      yaw: 0.031

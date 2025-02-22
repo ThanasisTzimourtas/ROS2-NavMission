@@ -1,0 +1,16 @@
+twist_mux:
+  ros__parameters:
+    topics:
+      navigation:
+        topic: cmd_vel_nav
+        timeout: 0.5
+        priority: 50
+      circle:
+        topic: cmd_vel_circle
+        timeout: 0.5
+        priority: 100
+    locks:
+      e_stop:
+        topic: emergency_stop
+        timeout: 0.0
+        priority: 255
