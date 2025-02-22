@@ -50,6 +50,9 @@ cd ROS2-NavMission
 sudo apt update
 sudo apt install -y python3-pip ros-${ROS_DISTRO}-nav2-msgs ros-${ROS_DISTRO}-lifecycle-msgs ros-${ROS_DISTRO}-tf2-ros ros-${ROS_DISTRO}-twist-mux ros-${ROS_DISTRO}-gazebo-ros-pkgs ros-${ROS_DISTRO}-nav2-lifecycle-manager
 
+# Install Clearpath navigation packages
+sudo apt install -y ros-${ROS_DISTRO}-clearpath-nav2-demos
+
 # For simulation support
 sudo apt install -y ros-${ROS_DISTRO}-ros-gz-sim
 
@@ -57,7 +60,156 @@ sudo apt install -y ros-${ROS_DISTRO}-ros-gz-sim
 pip3 install pyyaml
 ```
 
-### 3. Set Up Map
+### 3. Set Up Robot Configuration
+
+For simulation, you need to set up the robot configuration file:
+
+1. Create a directory for Clearpath configuration:
+```bash
+mkdir -p ~/clearpath
+```
+
+2. Create the robot configuration file:
+```bash
+nano ~/clearpath/robot.yaml
+```
+
+3. Copy and paste the following robot configuration:
+```yaml
+serial_number: a200-0000
+version: 0
+system:
+  username: administrator
+  hosts:
+    - hostname: cpr-a200-0000
+      ip: 192.168.131.1
+  ros2:
+    namespace: a200_0000
+    domain_id: 0
+    middleware:
+      implementation: rmw_fastrtps_cpp
+    workspaces: []
+platform:
+  controller: ps4
+  battery:
+    model: ES20_12C
+    configuration: S2P1
+  attachments:
+    - name: front_bumper
+      type: a200.bumper
+      model: default
+      parent: front_bumper_mount
+      xyz: [0.0, 0.0, 0.0]
+      rpy: [0.0, 0.0, 0.0]
+      enabled: true
+      extension: 0.0
+    - name: rear_bumper
+      type: a200.bumper
+      model: default
+      parent: rear_bumper_mount
+      xyz: [0.0, 0.0, 0.0]
+      rpy: [0.0, 0.0, 0.0]
+      enabled: true
+      extension: 0.0
+    - name: top_plate
+      type: a200.top_plate
+      model: pacs
+      parent: default_mount
+      xyz: [0.0, 0.0, 0.0]
+      rpy: [0.0, 0.0, 0.0]
+      enabled: true
+    - name: sensor_arch
+      type: a200.sensor_arch
+      model: sensor_arch_300
+      parent: default_mount
+      xyz: [0.0, 0.0, 0.0]
+      rpy: [0.0, 0.0, 0.0]
+      enabled: true
+  extras:
+    urdf: {}
+links:
+  box:
+    - name: user_bay_cover
+      parent: top_plate_link
+      xyz: [0.0, 0.0, 0.00735]
+      rpy: [0.0, 0.0, 0.0]
+      size: [0.4, 0.4, 0.002]
+  cylinder: []
+  frame: []
+  mesh: []
+  sphere: []
+mounts:
+  bracket:
+    - parent: top_plate_mount_d1
+      xyz: [0.0, 0.0, 0.0]
+      rpy: [0.0, 0.0, 0.0]
+      model: horizontal
+  fath_pivot:
+    - parent: sensor_arch_mount
+      xyz: [0.0, 0.0, -0.021]
+      rpy: [3.1415, 0.0, 0.0]
+      angle: 0.0
+  riser: []
+  sick: []
+  post: []
+  disk: []
+sensors:
+  camera:
+    - model: intel_realsense
+      urdf_enabled: true
+      launch_enabled: true
+      parent: fath_pivot_0_mount
+      xyz: [0.0, 0.0, 0.0]
+      rpy: [0.0, 0.0, 0.0]
+      ros_parameters:
+        intel_realsense:
+          camera_name: camera_0
+          device_type: d435
+          serial_no: '0'
+          enable_color: true
+          rgb_camera.profile: 640,480,30
+          enable_depth: true
+          depth_module.profile: 640,480,30
+          pointcloud.enable: true
+  gps: []
+  imu: []
+  lidar2d:
+    - model: hokuyo_ust
+      urdf_enabled: true
+      launch_enabled: true
+      parent: bracket_0_mount
+      xyz: [0.0, 0.0, 0.0]
+      rpy: [0.0, 0.0, 0.0]
+      ros_parameters:
+        urg_node:
+          laser_frame_id: lidar2d_0_laser
+          ip_address: 192.168.131.20
+          ip_port: 10940
+          angle_min: -2.356
+          angle_max: 2.356
+  lidar3d:
+    - model: velodyne_lidar
+      urdf_enabled: true
+      launch_enabled: true
+      parent: sensor_arch_mount
+      xyz: [0.0, 0.0, 0.0]
+      rpy: [0.0, 0.0, 0.0]
+      ros_parameters:
+        velodyne_driver_node:
+          frame_id: lidar3d_0_laser
+          device_ip: 192.168.131.25
+          port: 2368
+          model: VLP16
+        velodyne_transform_node:
+          model: VLP16
+          fixed_frame: lidar3d_0_laser
+          target_frame: lidar3d_0_laser
+```
+
+4. Save the file (in nano: CTRL+O, then ENTER, then CTRL+X)
+
+
+### 4. Set Up Map
 
 The repository includes the map file `clearpath_map.yaml` in the `map` directory. You need to copy this to your preferred location and update the launch file:
 
@@ -90,18 +242,6 @@ cp ~/ROS2-NavMission/map/clearpath_map.yaml /home/$USER/map/
      - `last_robot_pose.yaml`: Saved robot pose used for initialization
      - `twist_mux.yaml`: Configuration for the twist multiplexer
      - `nav2_params.yaml`: Parameters for the navigation stack
-
-
-### 4. Build the Package
-```bash
-cd ~/ROS2-NavMission
-colcon build --packages-select waypoint_navigator
-```
-
-### 5. Source the Workspace
-```bash
-source ~/ROS2-NavMission/install/setup.bash
-```
 
 ## 🚀 Usage
 
